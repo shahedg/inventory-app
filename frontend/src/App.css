@@ -1,3 +1,110 @@
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #f3f4f6;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.add-btn {
+  background-color: #0078d4;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.item-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.item-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background-color: #e5e7eb;
+}
+
+.item-details {
+  padding: 15px;
+  flex-grow: 1;
+}
+
+.item-details h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+}
+
+.description {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+}
+
+.meta-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.owner-badge {
+  font-weight: 600;
+}
+
+.status-badge {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: bold;
+  .status-badge.pending-transfer { background-color: #e0e7ff; color: #3730a3; }
+}
+
+.status-badge.available { background-color: #d1fae5; color: #065f46; }
+.status-badge.in-use { background-color: #fef3c7; color: #92400e; }
+
+.card-actions {
+  padding: 15px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.transfer-btn {
+  width: 100%;
+  padding: 8px;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.transfer-btn:hover {
+  background-color: #f9fafb;
+}
+
 /* --- Modal Styles --- */
 .modal-overlay {
   position: fixed;
@@ -73,7 +180,6 @@
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  .status-badge.pending-transfer { background-color: #e0e7ff; color: #3730a3; }
 }
 
 .save-btn:disabled {
@@ -111,4 +217,114 @@
 
 .reject-btn:hover {
   background-color: #dc2626;
+}
+
+/* --- Login Screen --- */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f3f4f6;
+}
+
+.login-box {
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.login-btn {
+  display: block;
+  padding: 12px;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: opacity 0.2s;
+}
+
+.login-btn:hover {
+  opacity: 0.9;
+}
+
+.ms-btn { background-color: #0078d4; }
+.gh-btn { background-color: #24292e; }
+
+.user-greeting {
+  color: #6b7280;
+  margin: 5px 0 0 0;
+  font-size: 0.9rem;
+}
+
+.logout-link {
+  color: #ef4444;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* --- Login Screen --- */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f3f4f6;
+}
+
+.login-box {
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.login-btn {
+  display: block;
+  padding: 12px;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: opacity 0.2s;
+}
+
+.login-btn:hover {
+  opacity: 0.9;
+}
+
+.ms-btn { background-color: #0078d4; }
+.gh-btn { background-color: #24292e; }
+
+.user-greeting {
+  color: #6b7280;
+  margin: 5px 0 0 0;
+  font-size: 0.9rem;
+}
+
+.logout-link {
+  color: #ef4444;
+  text-decoration: none;
+  font-weight: 600;
 }

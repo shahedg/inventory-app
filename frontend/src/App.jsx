@@ -6,6 +6,11 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // NEW: Authentication State
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newItem, setNewItem] = useState({ ItemName: '', Description: '', ImageURL: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,6 +25,24 @@ function App() {
     { UserID: 2, Name: 'Bob Builder' }
   ];
 
+  // NEW: Fetch User Authentication Status from Azure
+  useEffect(() => {
+    fetch('/.auth/me')
+      .then(response => response.json())
+      .then(data => {
+        if (data.clientPrincipal) {
+          setUser(data.clientPrincipal);
+          fetchItems(); // Only fetch tools if the user is logged in
+        } else {
+          setAuthLoading(false); // Done checking, user is not logged in
+        }
+      })
+      .catch(err => {
+        console.error("Auth error:", err);
+        setAuthLoading(false);
+      });
+  }, []);
+
   const fetchItems = () => {
     fetch('/api/GetItems')
       .then(response => {
@@ -29,22 +52,21 @@ function App() {
       .then(data => {
         setItems(data);
         setLoading(false);
+        setAuthLoading(false);
       })
       .catch(error => {
         console.error("Error fetching items:", error);
         setError("Failed to load inventory.");
         setLoading(false);
+        setAuthLoading(false);
       });
   };
-
-  useEffect(() => {
-    fetchItems();
-  }, []);
 
   const handleAddItem = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const itemData = { ...newItem, CurrentOwnerID: 1 };
+    // Still temporarily hardcoded to UserID 1 until we link the SSO email to the database
+    const itemData = { ...newItem, CurrentOwnerID: 1 }; 
 
     try {
         const response = await fetch('/api/AddItem', {
@@ -97,32 +119,46 @@ function App() {
     }
   };
 
-  // NEW: Function to handle Accepting or Rejecting a transfer
   const handleResolveTransfer = async (itemID, resolution) => {
     try {
         const response = await fetch('/api/ResolveTransfer', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ItemID: itemID,
-                Resolution: resolution // Will be either 'Accept' or 'Reject'
-            })
+            body: JSON.stringify({ ItemID: itemID, Resolution: resolution })
         });
-
-        if (response.ok) {
-            fetchItems(); // Refresh the dashboard to see the updated status
-        } else {
-            alert(`Failed to ${resolution} transfer.`);
-        }
+        if (response.ok) fetchItems();
     } catch (error) {
         console.error("Error resolving transfer:", error);
     }
   };
 
+  // --- NEW: LOGIN SCREEN RENDER ---
+  if (authLoading) return <div className="dashboard-container"><p>Verifying secure connection...</p></div>;
+
+  if (!user) {
+    return (
+      <div className="login-container">
+        <div className="login-box">
+          <h2>Tool Inventory Login</h2>
+          <p>Please sign in to access the dashboard.</p>
+          <div className="login-buttons">
+            <a href="/.auth/login/aad" className="login-btn ms-btn">Sign in with Microsoft</a>
+            <a href="/.auth/login/github" className="login-btn gh-btn">Sign in with GitHub</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- MAIN DASHBOARD RENDER ---
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
-        <h1>Global Inventory Dashboard</h1>
+        <div>
+          <h1>Global Inventory Dashboard</h1>
+          {/* Display the logged-in user's name/email */}
+          <p className="user-greeting">Welcome, {user.userDetails} | <a href="/.auth/logout" className="logout-link">Logout</a></p>
+        </div>
         <button className="add-btn" onClick={() => setIsModalOpen(true)}>+ Add New Tool</button>
       </header>
       
@@ -144,7 +180,6 @@ function App() {
               </div>
             </div>
             
-            {/* UPDATED: Dynamic Card Actions */}
             <div className="card-actions">
               {item.Status === 'Pending Transfer' ? (
                 <div className="resolve-actions">
@@ -152,13 +187,7 @@ function App() {
                   <button className="reject-btn" onClick={() => handleResolveTransfer(item.ItemID, 'Reject')}>Reject</button>
                 </div>
               ) : (
-                <button 
-                  className="transfer-btn" 
-                  onClick={() => {
-                    setTransferItem(item);
-                    setIsTransferModalOpen(true);
-                  }}
-                >
+                <button className="transfer-btn" onClick={() => { setTransferItem(item); setIsTransferModalOpen(true); }}>
                   Transfer Tool
                 </button>
               )}
