@@ -28,7 +28,8 @@ app.http('SyncUser', {
                 dbUserId = insertResult.recordset[0].UserID;
             }
 
-            return { jsonBody: { dbUserId } };
+            // return { jsonBody: { dbUserId } };
+            return { jsonBody: { dbUserId: result.recordset[0].UserID } };
         } catch (err) {
             return { status: 500, body: err.message };
         }
