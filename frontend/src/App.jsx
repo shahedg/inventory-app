@@ -46,32 +46,68 @@ function App() {
   // }, []);
   // Replace your existing auth useEffect with this:
 
+// useEffect(() => {
+//   async function handleAuth() {
+//     const response = await fetch('/.auth/me');
+//     const data = await response.json();
+//     const principal = data.clientPrincipal;
+
+//     if (principal) {
+//       const usersRes = await fetch('/api/GetUsers');
+//       const usersData = await usersRes.json();
+//       setUsers(usersData);;
+      
+//       // SYNC: Tell the backend who logged in to get the SQL UserID
+//       const syncRes = await fetch('/api/SyncUser', {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ 
+//           email: principal.userDetails, 
+//           name: principal.userDetails.split('@')[0] 
+//         })
+//       });
+      
+//       const { dbUserId } = await syncRes.json();
+//       setDbUserId(dbUserId); // Add a new state: const [dbUserId, setDbUserId] = useState(null);
+      
+//       fetchItems();
+//     } else {
+//       setAuthLoading(false);
+//     }
+//   }
+//   handleAuth();
+// }, []);
+
 useEffect(() => {
   async function handleAuth() {
-    const response = await fetch('/.auth/me');
-    const data = await response.json();
-    const principal = data.clientPrincipal;
+    try {
+      const response = await fetch('/.auth/me');
+      const data = await response.json();
+      const principal = data.clientPrincipal;
 
-    if (principal) {
-      const usersRes = await fetch('/api/GetUsers');
-      const usersData = await usersRes.json();
-      setUsers(usersData);;
-      
-      // SYNC: Tell the backend who logged in to get the SQL UserID
-      const syncRes = await fetch('/api/SyncUser', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email: principal.userDetails, 
-          name: principal.userDetails.split('@')[0] 
-        })
-      });
-      
-      const { dbUserId } = await syncRes.json();
-      setDbUserId(dbUserId); // Add a new state: const [dbUserId, setDbUserId] = useState(null);
-      
-      fetchItems();
-    } else {
+      if (principal) {
+        setUser(principal);
+        
+        // Wait for the DB to sync before doing anything else
+        const syncRes = await fetch('/api/SyncUser', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: principal.userDetails, 
+            name: principal.userDetails.split('@')[0] 
+          })
+        });
+        
+        const { dbUserId } = await syncRes.json();
+        setDbUserId(dbUserId); 
+        
+        // NOW fetch items
+        fetchItems();
+      } else {
+        setAuthLoading(false);
+      }
+    } catch (err) {
+      console.error("Auth initialization failed", err);
       setAuthLoading(false);
     }
   }
