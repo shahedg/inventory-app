@@ -1,0 +1,13 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html"
+  },
+  "routeConfiguration": {
+    "routes": [
+      {
+        "route": "/api/*",
+        "allowedRoles": ["authenticated"]
+      }
+    ]
+  }
+}
