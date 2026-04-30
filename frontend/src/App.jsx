@@ -8,6 +8,7 @@ function App() {
 
   // NEW: Authentication State
   const [user, setUser] = useState(null);
+  const [dbUserId, setDbUserId] = useState(null); // FIX 1: Added state
   const [authLoading, setAuthLoading] = useState(true);
 
   // Modal States
@@ -20,28 +21,62 @@ function App() {
   const [transferToUser, setTransferToUser] = useState('');
   const [isTransferring, setIsTransferring] = useState(false);
 
-  const availableUsers = [
-    { UserID: 1, Name: 'Alice Admin' },
-    { UserID: 2, Name: 'Bob Builder' }
-  ];
+  // const availableUsers = [
+  //   { UserID: 1, Name: 'Alice Admin' },
+  //   { UserID: 2, Name: 'Bob Builder' }
+  // ];
+  const [users, setUsers] = useState([]);
 
-  // NEW: Fetch User Authentication Status from Azure
-  useEffect(() => {
-    fetch('/.auth/me')
-      .then(response => response.json())
-      .then(data => {
-        if (data.clientPrincipal) {
-          setUser(data.clientPrincipal);
-          fetchItems(); // Only fetch tools if the user is logged in
-        } else {
-          setAuthLoading(false); // Done checking, user is not logged in
-        }
-      })
-      .catch(err => {
-        console.error("Auth error:", err);
-        setAuthLoading(false);
+  // // NEW: Fetch User Authentication Status from Azure
+  // useEffect(() => {
+  //   fetch('/.auth/me')
+  //     .then(response => response.json())
+  //     .then(data => {
+  //       if (data.clientPrincipal) {
+  //         setUser(data.clientPrincipal);
+  //         fetchItems(); // Only fetch tools if the user is logged in
+  //       } else {
+  //         setAuthLoading(false); // Done checking, user is not logged in
+  //       }
+  //     })
+  //     .catch(err => {
+  //       console.error("Auth error:", err);
+  //       setAuthLoading(false);
+  //     });
+  // }, []);
+  // Replace your existing auth useEffect with this:
+
+useEffect(() => {
+  async function handleAuth() {
+    const response = await fetch('/.auth/me');
+    const data = await response.json();
+    const principal = data.clientPrincipal;
+
+    if (principal) {
+      const usersRes = await fetch('/api/GetUsers');
+      const usersData = await usersRes.json();
+      setUsers(usersData);;
+      
+      // SYNC: Tell the backend who logged in to get the SQL UserID
+      const syncRes = await fetch('/api/SyncUser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: principal.userDetails, 
+          name: principal.userDetails.split('@')[0] 
+        })
       });
-  }, []);
+      
+      const { dbUserId } = await syncRes.json();
+      setDbUserId(dbUserId); // Add a new state: const [dbUserId, setDbUserId] = useState(null);
+      
+      fetchItems();
+    } else {
+      setAuthLoading(false);
+    }
+  }
+  handleAuth();
+}, []);
 
   const fetchItems = () => {
     fetch('/api/GetItems')
@@ -66,7 +101,7 @@ function App() {
     e.preventDefault();
     setIsSubmitting(true);
     // Still temporarily hardcoded to UserID 1 until we link the SSO email to the database
-    const itemData = { ...newItem, CurrentOwnerID: 1 }; 
+    const itemData = { ...newItem, CurrentOwnerID: dbUserId }; 
 
     try {
         const response = await fetch('/api/AddItem', {
@@ -100,7 +135,7 @@ function App() {
             body: JSON.stringify({
                 ItemID: transferItem.ItemID,
                 ToUserID: parseInt(transferToUser),
-                InitiatorID: 1 
+                InitiatorID: dbUserId 
             })
         });
 
@@ -216,7 +251,9 @@ function App() {
               </div>
               <div className="modal-actions">
                 <button type="button" className="cancel-btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="save-btn" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Tool'}</button>
+                <button type="submit" className="save-btn" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Tool'}
+                  {isSubmitting ? 'Saving...' : 'Save Tool'}
+                </button>
               </div>
             </form>
           </div>
@@ -235,8 +272,8 @@ function App() {
                 <label>Transfer To User: *</label>
                 <select required value={transferToUser} onChange={(e) => setTransferToUser(e.target.value)} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db' }}>
                   <option value="" disabled>Select a user...</option>
-                  {availableUsers.map(user => (
-                    <option key={user.UserID} value={user.UserID}>{user.Name}</option>
+                  {users.map(u => (
+                  <option key={u.UserID} value={u.UserID}>{u.Username}</option>
                   ))}
                 </select>
               </div>
