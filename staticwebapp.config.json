@@ -1,13 +1,16 @@
 {
-  "auth": {
-    "rolesSource": null
+  "routeConfiguration": {
+    "routes": [
+      {
+        "route": "/api/*",
+        "allowedRoles": ["authenticated"]
+      },
+      {
+        "route": "/*",
+        "allowedRoles": ["authenticated"]
+      }
+    ]
   },
-  "routes": [
-    {
-      "route": "/api/*",
-      "allowedRoles": ["authenticated"]
-    }
-  ],
   "responseOverrides": {
     "401": {
       "redirect": "/.auth/login/aad",

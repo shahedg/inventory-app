@@ -27,74 +27,19 @@ function App() {
   // ];
   const [users, setUsers] = useState([]);
 
-  // // NEW: Fetch User Authentication Status from Azure
-  // useEffect(() => {
-  //   fetch('/.auth/me')
-  //     .then(response => response.json())
-  //     .then(data => {
-  //       if (data.clientPrincipal) {
-  //         setUser(data.clientPrincipal);
-  //         fetchItems(); // Only fetch tools if the user is logged in
-  //       } else {
-  //         setAuthLoading(false); // Done checking, user is not logged in
-  //       }
-  //     })
-  //     .catch(err => {
-  //       console.error("Auth error:", err);
-  //       setAuthLoading(false);
-  //     });
-  // }, []);
-  // Replace your existing auth useEffect with this:
-
-// useEffect(() => {
-//   async function handleAuth() {
-//     const response = await fetch('/.auth/me');
-//     const data = await response.json();
-//     const principal = data.clientPrincipal;
-
-//     if (principal) {
-//       const usersRes = await fetch('/api/GetUsers');
-//       const usersData = await usersRes.json();
-//       setUsers(usersData);;
-      
-//       // SYNC: Tell the backend who logged in to get the SQL UserID
-//       const syncRes = await fetch('/api/SyncUser', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ 
-//           email: principal.userDetails, 
-//           name: principal.userDetails.split('@')[0] 
-//         })
-//       });
-      
-//       const { dbUserId } = await syncRes.json();
-//       setDbUserId(dbUserId); // Add a new state: const [dbUserId, setDbUserId] = useState(null);
-      
-//       fetchItems();
-//     } else {
-//       setAuthLoading(false);
-//     }
-//   }
-//   handleAuth();
-// }, []);
 
 useEffect(() => {
   async function handleAuth() {
     try {
+      // 1. Ask Azure: "Is anyone logged in?"
       const response = await fetch('/.auth/me');
       const data = await response.json();
       const principal = data.clientPrincipal;
 
       if (principal) {
         setUser(principal);
-
-        const usersRes = await fetch('/api/GetUsers');
-        if (usersRes.ok) {
-          const usersData = await usersRes.json();
-          setUsers(usersData);
-        }
         
-        // Wait for the DB to sync before doing anything else
+        // 2. Sync with SQL: "Here is the email, give me the SQL UserID"
         const syncRes = await fetch('/api/SyncUser', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -105,11 +50,12 @@ useEffect(() => {
         });
         
         const { dbUserId } = await syncRes.json();
-        setDbUserId(dbUserId); 
+        setDbUserId(dbUserId); // Store the SQL ID for Add/Transfer actions
         
-        // NOW fetch items
+        // 3. Now that we have a user, get the tools
         fetchItems();
       } else {
+        // No user found, stop loading so the login screen shows
         setAuthLoading(false);
       }
     } catch (err) {
@@ -209,23 +155,29 @@ useEffect(() => {
     }
   };
 
-  // --- NEW: LOGIN SCREEN RENDER ---
-  if (authLoading) return <div className="dashboard-container"><p>Verifying secure connection...</p></div>;
-
-  if (!user) {
-    return (
-      <div className="login-container">
-        <div className="login-box">
-          <h2>Tool Inventory Login</h2>
-          <p>Please sign in to access the dashboard.</p>
-          <div className="login-buttons">
-            <a href="/.auth/login/aad" className="login-btn ms-btn">Sign in with Microsoft</a>
-            <a href="/.auth/login/github" className="login-btn gh-btn">Sign in with GitHub</a>
-          </div>
-        </div>
-      </div>
-    );
+ // STATE 1: Still checking if user is logged in
+  if (authLoading) {
+      return <div className="loading-screen">Verifying Secure Session...</div>;
   }
+
+// STATE 2: User is definitely NOT logged in
+  if (!user) {
+      return (
+          <div className="login-container">
+              <h1>Inventory Portal</h1>
+              <div className="login-buttons">
+                  <a href="/.auth/login/aad" className="login-btn">Login with Microsoft</a>
+              </div>
+          </div>
+      );
+  }
+
+// STATE 3: User is logged in, show the actual app
+return (
+    <div className="dashboard-container">
+        {/* Your existing header and item-grid code goes here */}
+    </div>
+);
 
   // --- MAIN DASHBOARD RENDER ---
   return (
