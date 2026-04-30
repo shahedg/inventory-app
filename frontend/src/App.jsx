@@ -87,6 +87,12 @@ useEffect(() => {
 
       if (principal) {
         setUser(principal);
+
+        const usersRes = await fetch('/api/GetUsers');
+        if (usersRes.ok) {
+          const usersData = await usersRes.json();
+          setUsers(usersData);
+        }
         
         // Wait for the DB to sync before doing anything else
         const syncRes = await fetch('/api/SyncUser', {
